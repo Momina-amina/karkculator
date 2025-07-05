@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MSME Profit Calculator</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 700px; background: white; padding: 20px; margin: auto; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .output { margin-top: 20px; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>MSME Profit Calculator</h2>
+
+        <label>What do you want to calculate?</label>
+        <select id="mode" onchange="updateForm()">
+            <option value="price">Selling Price per Unit</option>
+            <option value="manufacturing">Manufacturing Cost per Unit</option>
+            <option value="units">Units to Sell</option>
+        </select>
+
+        <label>Currency:</label>
+        <select id="currency">
+            <option value="$">$ (USD)</option>
+            <option value="₨">₨ (PKR)</option>
+            <option value="€">€ (Euro)</option>
+        </select>
+
+        <div id="inputFields">
+            <label class="field cost">Manufacturing Cost per Unit:</label>
+            <input type="number" id="manufacturingCost" class="field cost" placeholder="e.g. 100">
+
+            <label class="field delivery">Delivery Charges (Total):</label>
+            <input type="number" id="deliveryCharges" class="field delivery" placeholder="e.g. 50">
+
+            <label class="field units">Number of Units:</label>
+            <input type="number" id="units" class="field units" placeholder="e.g. 10">
+
+            <label class="field profit">Desired Total Profit:</label>
+            <input type="number" id="desiredProfit" class="field profit" placeholder="e.g. 200">
+
+            <label class="field price hidden">Selling Price per Unit:</label>
+            <input type="number" id="pricePerUnit" class="field price hidden" placeholder="e.g. 300">
+        </div>
+
+        <button onclick="calculate()">Calculate</button>
+
+        <div class="output" id="results"></div>
+    </div>
+
+    <script>
+        function updateForm() {
+            const mode = document.getElementById("mode").value;
+            const fields = {
+                cost: document.querySelectorAll(".field.cost"),
+                delivery: document.querySelectorAll(".field.delivery"),
+                units: document.querySelectorAll(".field.units"),
+                profit: document.querySelectorAll(".field.profit"),
+                price: document.querySelectorAll(".field.price")
+            };
+
+            for (let group in fields) {
+                fields[group].forEach(el => el.classList.add("hidden"));
+            }
+
+            if (mode === "price") {
+                ["cost", "delivery", "units", "profit"].forEach(group =>
+                    fields[group].forEach(el => el.classList.remove("hidden"))
+                );
+            } else if (mode === "manufacturing") {
+                ["price", "delivery", "units", "profit"].forEach(group =>
+                    fields[group].forEach(el => el.classList.remove("hidden"))
+                );
+            } else if (mode === "units") {
+                ["price", "cost", "delivery", "profit"].forEach(group =>
+                    fields[group].forEach(el => el.classList.remove("hidden"))
+                );
+            }
+        }
+
+        function calculate() {
+            const mode = document.getElementById("mode").value;
+            const currency = document.getElementById("currency").value;
+            const manufacturingCost = parseFloat(document.getElementById("manufacturingCost").value) || 0;
+            const deliveryCharges = parseFloat(document.getElementById("deliveryCharges").value) || 0;
+            const units = parseInt(document.getElementById("units").value) || 1;
+            const desiredProfit = parseFloat(document.getElementById("desiredProfit").value) || 0;
+            const pricePerUnit = parseFloat(document.getElementById("pricePerUnit").value) || 0;
+
+            let result = "";
+
+            if (mode === "price") {
+                const totalCost = (manufacturingCost * units) + deliveryCharges;
+                const totalRevenueNeeded = totalCost + desiredProfit;
+                const suggestedPrice = totalRevenueNeeded / units;
+                result = `
+                    Total Cost: ${currency}${totalCost.toFixed(2)}<br>
+                    Total Revenue Needed: ${currency}${totalRevenueNeeded.toFixed(2)}<br>
+                    Suggested Price per Unit: <strong>${currency}${suggestedPrice.toFixed(2)}</strong>
+                `;
+            } else if (mode === "manufacturing") {
+                const totalRevenue = pricePerUnit * units;
+                const totalCostAllowed = totalRevenue - desiredProfit - deliveryCharges;
+                const maxManufacturingCost = totalCostAllowed / units;
+                result = `
+                    Total Revenue: ${currency}${totalRevenue.toFixed(2)}<br>
+                    Maximum Manufacturing Cost Allowed per Unit: <strong>${currency}${maxManufacturingCost.toFixed(2)}</strong>
+                `;
+            } else if (mode === "units") {
+                const profitPerUnit = pricePerUnit - manufacturingCost;
+                const totalUnits = (desiredProfit + deliveryCharges) / profitPerUnit;
+                result = `
+                    You need to sell at least <strong>${Math.ceil(totalUnits)}</strong> units<br>
+                    to make a profit of ${currency}${desiredProfit.toFixed(2)}.
+                `;
+            }
+
+            document.getElementById("results").innerHTML = result;
+        }
+
+        window.onload = updateForm;
+    </script>
+</body>
+</html>
